@@ -1,0 +1,35 @@
+name: Sync GitHub MCP Registry
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 6 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-github-mcp-registry
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Mirror the GitHub MCP Registry
+        run: node scripts/sync-registry.mjs
+
+      - name: Commit changes
+        run: |
+          git add docs/v0.1/servers
+          if git diff --cached --quiet; then
+            echo "Registry is already current."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Sync GitHub MCP Registry"
+          git push
